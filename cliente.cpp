@@ -85,12 +85,84 @@ std::string Cliente::recibeDatos(int size){
     return reply;
 }
 
-std::string  Cliente::recibirVideo() {
-    enviarSolicitud(2);
+void Cliente::enviarSolicitud(int numSolicitud){
+    //Json con la solicitud uno que es subir un video
+    json solicitud;
+    solicitud["Solicitud"] = numSolicitud;
+    std::string stringEnviar = solicitud.dump();
+    char *mensajejsonchar = &stringEnviar[0u];
+    enviarDatos(mensajejsonchar); //Envia Json con solicitud
+}
+
+void Cliente::guardarVideo(std::string path){
+
+    enviarSolicitud(1);
     std::cout << recibeDatos(30) << std::endl; //Mensaje Recibido
     //Finaliza Json con la solicitud uno y entra al loop de enviar video
 
-    std::string path = "/Users/juanpablomartinezbrenes/Desktop/OdisseyMediaPlayer/videos/prueba1.mp4";
+    enviarDatos(metadata(path));
+
+    FILE * fpIn = fopen(path.c_str(), "r");
+    if (fpIn)
+    {
+       char buf[BUFFER_SIZE];
+       std::string byte = "";
+       while(1)
+       {
+           ssize_t bytesRead = fread(buf, 1, sizeof(buf), fpIn);
+
+           byte = std::to_string((int)bytesRead);
+           send(client_socket, byte.c_str(),5, 0);
+           //std::this_thread::sleep_for(std::chrono::nanoseconds(1000000000));
+           //enviarDatos(byte);
+           std::cout << byte << std::endl;
+
+           if (bytesRead <= 0){
+               std::cout << "Video Enviado total"<< std::endl;
+               break;  // EOF
+           }
+           printf("Read %i bytes from file, sending them to network...\n", (int)bytesRead);
+           if (send(client_socket, buf, bytesRead, 0) != bytesRead)
+           {
+              perror("send");
+              break;
+           }
+
+        }
+
+       fclose(fpIn);
+    }
+    else printf("Error, couldn't open file [%s] to receive!\n", "fileName");
+    std::cout << "Video Enviado"<< std::endl;
+}
+std::string Cliente::metadata(std::string path){
+    json metadata;
+    std::string titulo = path.substr(39, path.length() - 4);
+
+    metadata["Titulo: "] = titulo;
+    metadata["Artista: "] = "Desconocido";
+    metadata["Album: "] = "Desconocido";
+    metadata["Año: "] = "Desconocido";
+    metadata["Duracion: "] = "Desconocido";
+    metadata["Contenedor: "] = "Desconocido";
+
+    //Convierte a char el Json con la metadata
+    std::string stringEnviar = metadata.dump();
+
+    std::cout << stringEnviar << std::endl;
+    char *mensajejsonchar = &stringEnviar[0u];
+
+    return mensajejsonchar;
+}
+
+std::string Cliente::reproducirVideo() {
+
+    enviarSolicitud(2);
+    std::cout <<recibeDatos(30) << std::endl; //Mensaje Recibido
+    //Finaliza Json con la solicitud uno y entra al loop de enviar video
+
+    std::string path = "/Users/juanpablomartinezbrenes/Desktop/prueba5.mp4";
+
     FILE * fpIn = fopen(path.c_str(), "w");
     if (fpIn)
     {
@@ -128,87 +200,85 @@ std::string  Cliente::recibirVideo() {
                 rec += (int) bytesReceived;
             }while( rec < sizeOfBuffer );
         }
+
         fclose(fpIn);
         memset(buf,0,BUFFER_SIZE);
         free(buffer);
-    } else printf("Error, no se pudo abrir el archivo [%s] para recibir los datos.\n", "prueba.webm");
+
+    } else{
+        std::cout << "Error, no se pudo abrir el archivo " << path << std::endl;
+    }
 
     std::cout << "Video Recibido"<< std::endl;
 
     return path;
 }
 
-void Cliente::enviarSolicitud(int numSolicitud){
-    //Json con la solicitud uno que es subir un video
-    json solicitud;
-    solicitud["Solicitud"] = numSolicitud;
-    std::string stringEnviar = solicitud.dump();
-    char *mensajejsonchar = &stringEnviar[0u];
-    enviarDatos(mensajejsonchar); //Envia Json con solicitud
+void Cliente::eliminarVideo(){
+    enviarSolicitud(3);
+    std::cout << recibeDatos(256) << std::endl;
 }
 
-void Cliente::subirVideo(std::string path){
+bool Cliente::buscarVideo(std::string nombre){
 
-    enviarSolicitud(1);
-    std::cout << recibeDatos(30) << std::endl; //Mensaje Recibido
-    //Finaliza Json con la solicitud uno y entra al loop de enviar video
+    enviarSolicitud(3);
+    std::cout << recibeDatos(30) << std::endl;
 
-    FILE * fpIn = fopen(path.c_str(), "r");
-    if (fpIn)
-    {
-       char buf[BUFFER_SIZE];
-       std::string byte = "";
-       while(1)
-       {
-           ssize_t bytesRead = fread(buf, 1, sizeof(buf), fpIn);
+    enviarDatos(nombre);
 
-           byte = std::to_string((int)bytesRead);
-           send(client_socket, byte.c_str(),5, 0);
-           //std::this_thread::sleep_for(std::chrono::nanoseconds(1000000000));
-           //enviarDatos(byte);
-           std::cout << byte << std::endl;
+    std::string respuesta = recibeDatos(14);
+    std::cout << respuesta << std::endl;
 
-           if (bytesRead <= 0){
-               std::cout << "Video Enviado total"<< std::endl;
-               break;  // EOF
-           }
+    respuesta = recibeDatos(15);
+    std::cout << "respesuta: " << respuesta << std::endl;
 
-           printf("Read %i bytes from file, sending them to network...\n", (int)bytesRead);
-           if (send(client_socket, buf, bytesRead, 0) != bytesRead)
-           {
-              perror("send");
-              break;
-           }
-
-        }
-
-       fclose(fpIn);
+    if(respuesta == "encontrado"){
+        return true;
+    }else{
+        return false;
     }
-    else printf("Error, couldn't open file [%s] to receive!\n", "fileName");
-    std::cout << "Video Enviado"<< std::endl;
 }
-//std::string Cliente::metadata(std::string path){
 
-//    libvlc_instance_t* media = libvlc_new(0,NULL);
-//    if(media == NULL){
-//        perror("Error");
-//        exit(1);
-//    }
-//    libvlc_media_t *meta;
+std::string Cliente::cambiarMetadata(std::string nombre){
+    enviarSolicitud(5);
+    std::cout << recibeDatos(30) << std::endl;
 
-//    meta = libvlc_media_new_path(media, path.c_str());
+    enviarDatos(nombre);
+    std::string respuesta = recibeDatos(14);
+    std::cout << respuesta << std::endl;
 
-//    json metadata;
+    std::string d = recibeDatos(3);
+    std::cout<< d << std::endl;
 
-//    metadata["Titulo: "] = libvlc_media_get_meta(meta,libvlc_meta_Title);
-//    //metadata["Artista: "] = libvlc_media_get_meta(meta,libvlc_meta_Artist);
-//    //metadata["Album: "] = libvlc_media_get_meta(meta,libvlc_meta_Album);
-//    //metadata["año"] = libvlc_media_get_meta(meta,libvlc_meta_Date);
-//    //metadata["Contenedor: "] = libvlc_media_get_meta(meta,libvlc_meta_Description);
 
-//    //Convierte a char el Json con la metadata
-//    std::string stringEnviar = metadata.dump();
-//    char *mensajejsonchar = &stringEnviar[0u];
+    if (d != "999"){
+        respuesta = recibeDatos(std::stoi(d));
+        std::string respuestaNueva = respuesta.substr(0, respuesta.size());
+        std::cout << respuestaNueva << std::endl;
 
-//    return mensajejsonchar;
-//}
+        return respuestaNueva;
+    }else{
+        return "Noencontrado";
+    }
+
+}
+
+bool Cliente::eliminarVideo(std::string nombre){
+    enviarSolicitud(4);
+    std::cout << recibeDatos(30) << std::endl;
+
+    enviarDatos(nombre);
+    std::string d = recibeDatos(1);
+    std::cout << d << std::endl;
+
+    std::string respuesta = d.substr(0, 1);
+    std::cout << respuesta << std::endl;
+
+    if(respuesta != "1"){
+        std::cout << "Se eliminó el video: " << nombre << std::endl;
+        return true;
+    }else{
+        std::cout << "No se pudo eliminar el video: " << nombre << std::endl;
+        return false;
+    }
+}

@@ -13,7 +13,7 @@
 #include <netdb.h>
 #include "definitions.h"
 #include "JSON/json.hpp"
-// #include <vlc/vlc.h>
+#include <vlc/vlc.h>
 
 class Cliente
 {
@@ -38,11 +38,16 @@ public:
     bool conectar();
     bool enviarDatos(std::string data);
     std::string recibeDatos(int size);
-    std::string  recibirVideo();
+    void  guardarVideo(std::string path);
 
-    void subirVideo(std::string path);
+    std::string reproducirVideo();
     void enviarSolicitud(int numSolicitud);
-//    std::string metadata(std::string path);
+    std::string metadata(std::string path);
+
+    void eliminarVideo();
+    bool  buscarVideo(std::string nombre);
+    std::string cambiarMetadata(std::string nombre);
+    bool eliminarVideo(std::string nombre);
 
 
 };

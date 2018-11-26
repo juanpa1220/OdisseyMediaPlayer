@@ -23,26 +23,51 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 CONFIG += c++11
+CONFIG-=app_bundle
 
 SOURCES += \
         main.cpp \
         widget.cpp \
     cliente.cpp \
-    jsonmaker.cpp
+    dialogmetadata.cpp
 
 HEADERS += \
         widget.h \
     cliente.h \
-    jsonmaker.h \
     definitions.h \
-    JSON/json.hpp
+    JSON/json.hpp \
+    dialogmetadata.h
 
 FORMS += \
-        widget.ui
+        widget.ui \
+    dialogmetadata.ui
 
 QMAKE_CXXFLAGS += -std=gnu++11
 
-# Default rules for deployment.
+#Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+#win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../Desktop/MacOS/lib/release/ -lvlc.5
+#else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../Desktop/MacOS/lib/debug/ -lvlc.5
+#else:unix: LIBS += -L$$PWD/../../Desktop/MacOS/lib/ -lvlc.5
+
+#INCLUDEPATH += $$PWD/../../Desktop/MacOS/include
+#DEPENDPATH += $$PWD/../../Desktop/MacOS/include
+
+#macx: LIBS += -L$$PWD/../Contents/MacOS/lib/ -lvlc.5
+
+#INCLUDEPATH += $$PWD/../Contents/MacOS/include
+#DEPENDPATH += $$PWD/../Contents/MacOS/include
+
+
+
+
+macx: LIBS += -L$$PWD/../MacOS/lib/ -lvlc.5
+
+INCLUDEPATH += $$PWD/../MacOS/include
+DEPENDPATH += $$PWD/../MacOS/include
+
+DISTFILES += \
+    videos/prueba1.mp4

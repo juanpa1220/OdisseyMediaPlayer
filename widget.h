@@ -5,6 +5,7 @@
 #include <qboxlayout.h>
 #include <iostream>
 #include "cliente.h"
+#include "dialogmetadata.h"
 using std::cout;
 
 namespace Ui {
@@ -37,12 +38,19 @@ private slots:
 
     void on_volume_valueChanged(int value);
 
+    void on_search_clicked();
+
+    void on_updateButton_clicked();
+
+    void on_deleteButton_clicked();
+
 private:
     Ui::Widget *ui;
     QMediaPlayer *mMediaPlayer;
     QVideoWidget *mVideoWidget;
     bool isMute;
     Cliente *cliente;
+    std::string videoNameInput;
 };
 
 #endif // WIDGET_H

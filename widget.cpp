@@ -4,6 +4,7 @@
 #include <QVideoWidget>
 #include <QFileDialog>
 #include <qstandardpaths.h>
+#include <QMessageBox>
 
 Widget::Widget(QWidget *parent) :
     QWidget(parent),
@@ -14,16 +15,7 @@ Widget::Widget(QWidget *parent) :
     mMediaPlayer = new QMediaPlayer(this);
     mVideoWidget = new QVideoWidget(this);
     mMediaPlayer->setVideoOutput(mVideoWidget);
-//    auto L = static_cast<QBoxLayout *>(layout());
-//    L->insertWidget(0, mVideoWidget);
     ui->controlsLayout->insertWidget(0,mVideoWidget);
-
-//    mMediaPlayer = new QMediaPlayer(this, QMediaPlayer::VideoSurface);
-//    mVideoWidget = new QVideoWidget;
-//    mMediaPlayer->setVideoOutput(mVideoWidget);
-//    mLayout = new QVBoxLayout;
-//    mLayout->addWidget(mVideoWidget);
-
     isMute = false;
 
     connect(mMediaPlayer, &QMediaPlayer::positionChanged, [&](int pos){
@@ -42,6 +34,7 @@ Widget::Widget(QWidget *parent) :
 
 Widget::~Widget()
 {
+    cliente->detener();
     delete ui;
 }
 
@@ -52,9 +45,7 @@ void Widget::on_open_clicked()
     if (filename.isEmpty()){
         return;
     }
-    cliente->subirVideo(filename.toStdString());
-
-//    on_playpause_clicked();
+    cliente->guardarVideo(filename.toStdString());
 }
 
 
@@ -65,8 +56,10 @@ void Widget::on_playpause_clicked()
         mMediaPlayer->pause();
         break;
     default:
-        QString filename = QString::fromStdString(cliente->recibirVideo());
-        mMediaPlayer->setMedia(QUrl::fromLocalFile(filename));
+//        std::string test = cliente->reproducirVideo();
+//        QString filename = QString::fromStdString(test);
+//        std::cout << filename.toStdString() << std::endl;
+//        mMediaPlayer->setMedia(QUrl::fromLocalFile(filename));
         mMediaPlayer->play();
         break;
     }
@@ -105,4 +98,56 @@ void Widget::on_mute_clicked()
 void Widget::on_volume_valueChanged(int value)
 {
     mMediaPlayer->setVolume(value);
+}
+
+void Widget::on_search_clicked()
+{
+    videoNameInput = ui->videoNameInput->text().toStdString() + + ".mp4";
+    std::cout << videoNameInput << std::endl;
+
+    bool respuesta = cliente->buscarVideo(videoNameInput);
+
+    if (respuesta){
+        std::cout<< "si encontro" << std::endl;
+        QString filename = QString::fromStdString(cliente->reproducirVideo());
+        mMediaPlayer->setMedia(QUrl::fromLocalFile(filename));
+        mMediaPlayer->play();
+    }else{
+        std::cout<< "no encontro" << std::endl;
+}
+}
+
+void Widget::on_updateButton_clicked()
+{
+    videoNameInput = ui->videoNameInput->text().toStdString() + ".mp4";
+    std::cout << videoNameInput << std::endl;
+
+    std::string actualMetadata = cliente->cambiarMetadata(videoNameInput);
+
+    if (actualMetadata != "Noencontrado"){
+
+        DialogMetadata *dialogMetadata = new DialogMetadata(this);
+        dialogMetadata->setActualmetadata(actualMetadata);
+        dialogMetadata->setCliente(cliente);
+
+
+        dialogMetadata->setModal(true);
+        dialogMetadata->show();
+    }else{
+        QMessageBox::information(this, tr("ERROR"), tr("EL VIDEO SOLICITADO NO FUE ENCONTRADO"));
+    }
+}
+
+void Widget::on_deleteButton_clicked()
+{
+    videoNameInput = ui->videoNameInput->text().toStdString() + ".mp4";
+    std::cout << videoNameInput << std::endl;
+
+    if(!cliente->eliminarVideo(videoNameInput)){
+        QMessageBox::information(this, tr("ERROR"), tr("EL VIDEO SOLICITADO NO FUE ENCONTRADO y POR ENDE NO SE PUDO ELIMINAR"));
+    }else{
+        std::string mensaje = "El video " + ui->videoNameInput->text().toStdString() + "se ha eliminado";
+        QMessageBox::information(this, tr("ERROR"), tr(mensaje.c_str()));
+    }
+
 }
